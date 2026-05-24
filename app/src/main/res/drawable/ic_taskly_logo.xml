@@ -1,0 +1,78 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Background decorative soft glow -->
+    <path
+        android:pathData="M50,50m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"
+        android:fillColor="#0D0D9488" />
+
+    <!-- Left check stroke / Green climb curve -->
+    <path
+        android:pathData="M22,50 C26,45 32,48 35,53 L42,65 C45,70 41,75 36,73 L20,62 C16,59 18,54 22,50 Z"
+        android:fillType="nonZero">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="18"
+                android:startY="50"
+                android:endX="42"
+                android:endY="73"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF16A34A" /> <!-- Green -->
+                <item android:offset="1.0" android:color="#FF0D9488" /> <!-- Teal -->
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Main Ascent Arrow (Blue) -->
+    <path
+        android:pathData="M24,58 L54,22 L62,30 L32,66 Z"
+        android:fillType="nonZero">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="24"
+                android:startY="58"
+                android:endX="62"
+                android:endY="30"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF0284C7" /> <!-- Sky Blue -->
+                <item android:offset="1.0" android:color="#FF0EA5E9" /> <!-- Light Blue -->
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Arrowhead tip (Blue/Teal) -->
+    <path
+        android:pathData="M50,22 L62,18 L64,30 Z"
+        android:fillType="nonZero"
+        android:fillColor="#FF0284C7" />
+
+    <!-- Right Bird Body / Curved Check wing (Teal to Teal-Green) -->
+    <path
+        android:pathData="M38,62 C48,58 52,50 58,45 C64,40 70,42 75,44 C78,45 81,42 83,38 C84,36 86,38 88,40 C91,43 92,48 88,52 C82,58 75,65 67,70 C58,75 48,76 38,72 Z"
+        android:fillType="nonZero">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="38"
+                android:startY="72"
+                android:endX="88"
+                android:endY="38"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF0D9488" /> <!-- Teal -->
+                <item android:offset="1.0" android:color="#FF0284C7" /> <!-- Sky Blue -->
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Small accent check indicator dot -->
+    <path
+        android:pathData="M24,42 L28,46 L36,36"
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFD97706"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+</vector>

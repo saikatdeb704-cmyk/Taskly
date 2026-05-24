@@ -1,0 +1,6 @@
+{
+  "name": "Taskly",
+  "description": "A stylish and responsive personal task manager to add, edit, delete, and organize tasks with local database storage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
