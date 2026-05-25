@@ -1,6 +1,7 @@
 package com.example
 
 import android.os.Bundle
+import androidx.compose.foundation.Image
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -71,8 +72,27 @@ fun TasklyApp() {
     val viewModel: TaskViewModel = viewModel(factory = TaskViewModelFactory(repository))
 
     // Dynamic notification permission check/request for Android 13+
-    var isNotificationPermissionGranted by remember { mutableStateOf(true) }
-    var isExactAlarmPermissionGranted by remember { mutableStateOf(true) }
+    val initialNotificationPermissionStatus = remember {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+    }
+    val initialExactAlarmPermissionStatus = remember {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+    }
+
+    var isNotificationPermissionGranted by remember { mutableStateOf(initialNotificationPermissionStatus) }
+    var isExactAlarmPermissionGranted by remember { mutableStateOf(initialExactAlarmPermissionStatus) }
 
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
@@ -162,10 +182,15 @@ fun TasklyApp() {
                 },
                 modifier = Modifier
                     .testTag("add_task_fab")
-                    .padding(bottom = 16.dp, end = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    .padding(bottom = 16.dp, end = 8.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(18.dp)
+                    ),
+                shape = RoundedCornerShape(18.dp),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -320,6 +345,7 @@ fun TasklyApp() {
             }
         )
     }
+
 }
 
 @Composable
@@ -336,39 +362,27 @@ fun HeaderSection(
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Geometric Balance custom checklist logo icon
+        // High-fidelity custom checklist logo using SVG asset
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(16.dp)
+                )
                 .testTag("app_logo_icon"),
             contentAlignment = Alignment.Center
         ) {
-            Box(
+            Image(
+                painter = painterResource(id = R.drawable.ic_taskly_logo),
+                contentDescription = "Taskly App Logo",
                 modifier = Modifier
-                    .size(22.dp)
-                    .border(2.5.dp, MaterialTheme.colorScheme.onPrimaryContainer, RoundedCornerShape(3.dp))
-            ) {
-                // Checklist horizontal lines
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 3.dp, vertical = 3.dp)
-                        .height(2.5.dp)
-                        .background(MaterialTheme.colorScheme.onPrimaryContainer)
-                        .align(Alignment.TopCenter)
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 3.dp)
-                        .offset(y = 10.dp)
-                        .height(2.5.dp)
-                        .background(MaterialTheme.colorScheme.onPrimaryContainer)
-                        .align(Alignment.TopCenter)
-                )
-            }
+                    .size(38.dp)
+                    .padding(2.dp)
+            )
         }
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -376,20 +390,43 @@ fun HeaderSection(
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = "taskly",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                letterSpacing = (-0.5).sp,
-                modifier = Modifier.testTag("app_title_text")
-            )
-            Text(
-                text = todayDateString,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "task",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.primary,
+                    letterSpacing = (-1).sp,
+                    modifier = Modifier.testTag("app_title_text")
+                )
+                Text(
+                    text = "ly",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Light,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    letterSpacing = (-1).sp
+                )
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(13.dp)
+                )
+                Text(
+                    text = todayDateString,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
 
         // More Options Toolbar trigger
@@ -470,6 +507,12 @@ fun PermissionsChecklistSection(
 ) {
     if (isNotificationGranted && isAlarmGranted) return
 
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val containerBg = if (darkTheme) Color(0xFF2C1E1E) else Color(0xFFFFF1F1)
+    val cardBorderColor = if (darkTheme) Color(0xFFEF4444).copy(alpha = 0.5f) else Color(0xFFFCA5A5)
+    val mainWarningColor = if (darkTheme) Color(0xFFFCA5A5) else Color(0xFF991B1B)
+    val accentIconColor = if (darkTheme) Color(0xFFEF4444) else Color(0xFFDC2626)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -477,9 +520,9 @@ fun PermissionsChecklistSection(
             .testTag("permissions_checklist_card"),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.18f)
+            containerColor = containerBg
         ),
-        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f))
+        border = BorderStroke(1.5.dp, cardBorderColor)
     ) {
         Column(
             modifier = Modifier
@@ -493,7 +536,7 @@ fun PermissionsChecklistSection(
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = "Permissions Required Alert",
-                    tint = MaterialTheme.colorScheme.error,
+                    tint = accentIconColor,
                     modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -501,14 +544,14 @@ fun PermissionsChecklistSection(
                     text = "System Setup Checklist",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.error
+                    color = mainWarningColor
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "Certain features require system access. Tap inactive items to grant authorizations.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF475569)
             )
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -519,12 +562,19 @@ fun PermissionsChecklistSection(
                     .clip(RoundedCornerShape(14.dp))
                     .clickable { if (!isNotificationGranted) onRequestNotificationPermission() }
                     .background(
-                        if (isNotificationGranted) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                        else MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                        if (isNotificationGranted) {
+                            if (darkTheme) Color(0xFF0F2D1D) else Color(0xFFE6F4EA)
+                        } else {
+                            if (darkTheme) Color(0xFF381A1A) else Color(0xFFFFEAEA)
+                        }
                     )
                     .border(
                         width = 1.dp,
-                        color = if (isNotificationGranted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.error.copy(alpha = 0.25f),
+                        color = if (isNotificationGranted) {
+                            if (darkTheme) Color(0xFF10B981).copy(alpha = 0.6f) else Color(0xFFA7F3D0)
+                        } else {
+                            if (darkTheme) Color(0xFFEF4444).copy(alpha = 0.5f) else Color(0xFFFCA5A5)
+                        },
                         shape = RoundedCornerShape(14.dp)
                     )
                     .padding(12.dp),
@@ -533,7 +583,11 @@ fun PermissionsChecklistSection(
                 Icon(
                     imageVector = if (isNotificationGranted) Icons.Default.CheckCircle else Icons.Default.Warning,
                     contentDescription = "Status icon",
-                    tint = if (isNotificationGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    tint = if (isNotificationGranted) {
+                        if (darkTheme) Color(0xFF34D399) else Color(0xFF059669)
+                    } else {
+                        accentIconColor
+                    },
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -542,13 +596,21 @@ fun PermissionsChecklistSection(
                         text = "1. Enable Push Notifications",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (isNotificationGranted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                        color = if (isNotificationGranted) {
+                            if (darkTheme) Color(0xFF989898) else Color(0xFF6B7280)
+                        } else {
+                            if (darkTheme) Color(0xFFFCA5A5) else Color(0xFF991B1B)
+                        },
                         textDecoration = if (isNotificationGranted) TextDecoration.LineThrough else TextDecoration.None
                     )
                     Text(
                         text = if (isNotificationGranted) "Enabled & Active" else "Pending action - Tap to authorize",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isNotificationGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isNotificationGranted) {
+                            if (darkTheme) Color(0xFF34D399) else Color(0xFF059669)
+                        } else {
+                            if (darkTheme) Color(0xFFF87171) else Color(0xFFB91C1C)
+                        }
                     )
                 }
             }
@@ -562,12 +624,19 @@ fun PermissionsChecklistSection(
                     .clip(RoundedCornerShape(14.dp))
                     .clickable { if (!isAlarmGranted) onRequestAlarmPermission() }
                     .background(
-                        if (isAlarmGranted) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                        else MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                        if (isAlarmGranted) {
+                            if (darkTheme) Color(0xFF0F2D1D) else Color(0xFFE6F4EA)
+                        } else {
+                            if (darkTheme) Color(0xFF381A1A) else Color(0xFFFFEAEA)
+                        }
                     )
                     .border(
                         width = 1.dp,
-                        color = if (isAlarmGranted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.error.copy(alpha = 0.25f),
+                        color = if (isAlarmGranted) {
+                            if (darkTheme) Color(0xFF10B981).copy(alpha = 0.6f) else Color(0xFFA7F3D0)
+                        } else {
+                            if (darkTheme) Color(0xFFEF4444).copy(alpha = 0.5f) else Color(0xFFFCA5A5)
+                        },
                         shape = RoundedCornerShape(14.dp)
                     )
                     .padding(12.dp),
@@ -576,7 +645,11 @@ fun PermissionsChecklistSection(
                 Icon(
                     imageVector = if (isAlarmGranted) Icons.Default.CheckCircle else Icons.Default.Warning,
                     contentDescription = "Status icon",
-                    tint = if (isAlarmGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    tint = if (isAlarmGranted) {
+                        if (darkTheme) Color(0xFF34D399) else Color(0xFF059669)
+                    } else {
+                        accentIconColor
+                    },
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -585,13 +658,21 @@ fun PermissionsChecklistSection(
                         text = "2. Allow Exact Alarms & Reminders",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (isAlarmGranted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                        color = if (isAlarmGranted) {
+                            if (darkTheme) Color(0xFF989898) else Color(0xFF6B7280)
+                        } else {
+                            if (darkTheme) Color(0xFFFCA5A5) else Color(0xFF991B1B)
+                        },
                         textDecoration = if (isAlarmGranted) TextDecoration.LineThrough else TextDecoration.None
                     )
                     Text(
                         text = if (isAlarmGranted) "Enabled & Active" else "Pending action - Tap to allow in Settings",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isAlarmGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isAlarmGranted) {
+                            if (darkTheme) Color(0xFF34D399) else Color(0xFF059669)
+                        } else {
+                            if (darkTheme) Color(0xFFF87171) else Color(0xFFB91C1C)
+                        }
                     )
                 }
             }
@@ -602,21 +683,44 @@ fun PermissionsChecklistSection(
 @Composable
 fun MetricsSection(completedCount: Int, totalCount: Int, progress: Float) {
     val activeCount = totalCount - completedCount
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
     
+    val gradientBrush = remember(darkTheme) {
+        if (darkTheme) {
+            Brush.horizontalGradient(
+                colors = listOf(
+                    Color(0xFF0F2D2A).copy(alpha = 0.8f), // Deep Teal tint
+                    Color(0xFF090D16).copy(alpha = 0.9f)  // Background Slate
+                )
+            )
+        } else {
+            Brush.horizontalGradient(
+                colors = listOf(
+                    Color(0xFFE6F4F1), // Soft Menthol/Teal
+                    Color(0xFFF1F5F9)  // Slate Light
+                )
+            )
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .testTag("metrics_card"),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+            containerColor = Color.Transparent
         ),
-        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (darkTheme) Color(0xFF14B8A6).copy(alpha = 0.25f) else Color(0xFF0D9488).copy(alpha = 0.15f)
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(gradientBrush)
                 .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -625,24 +729,32 @@ fun MetricsSection(completedCount: Int, totalCount: Int, progress: Float) {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "DAILY FLOW",
+                    text = "DAILY FOCUS FLOW",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 1.2.sp
+                    letterSpacing = 1.5.sp
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = "$completedCount/$totalCount",
+                        text = "$completedCount",
                         style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "tasks loaded",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "/$totalCount",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(bottom = 2.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "tasks complete",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
@@ -650,15 +762,16 @@ fun MetricsSection(completedCount: Int, totalCount: Int, progress: Float) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = if (progress >= 1f && totalCount > 0) 
-                        "Perfect harmony! Exceptional effort." 
+                        "Perfect harmony! Extraordinary effort today." 
                     else if (progress >= 0.5f) 
-                        "Over halfway there! Keep pushing your boundaries." 
+                        "Over halfway! Tap into your flow state." 
                     else if (totalCount > 0) 
-                        "Steady progress. Let's tackle them one by one!" 
+                        "Steady progress. Let's tackle them one by one." 
                     else 
-                        "All clear! Add custom tasks to begin your focus.",
+                        "Clean slate! Tap the '+' button below to add tasks.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
             }
 
@@ -666,7 +779,7 @@ fun MetricsSection(completedCount: Int, totalCount: Int, progress: Float) {
 
             // Premium Custom Circular Arc Canvas
             val primaryColor = MaterialTheme.colorScheme.primary
-            val trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f)
+            val trackColor = if (darkTheme) Color(0xFF1E293B) else Color(0xFFE2E8F0)
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(82.dp)
@@ -675,7 +788,7 @@ fun MetricsSection(completedCount: Int, totalCount: Int, progress: Float) {
                     // Frame trace track spacer
                     drawCircle(
                         color = trackColor,
-                        style = Stroke(width = 7.dp.toPx())
+                        style = Stroke(width = 6.dp.toPx())
                     )
                     // High-contrast primary sweep
                     drawArc(
@@ -683,7 +796,10 @@ fun MetricsSection(completedCount: Int, totalCount: Int, progress: Float) {
                         startAngle = -90f,
                         sweepAngle = progress * 360f,
                         useCenter = false,
-                        style = Stroke(width = 8.dp.toPx())
+                        style = Stroke(
+                            width = 7.dp.toPx(),
+                            cap = androidx.compose.ui.graphics.StrokeCap.Round
+                        )
                     )
                 }
                 Column(
@@ -692,15 +808,15 @@ fun MetricsSection(completedCount: Int, totalCount: Int, progress: Float) {
                     Text(
                         text = "${(progress * 100).toInt()}%",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "DONE",
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 8.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -724,202 +840,237 @@ fun SearchAndFilterSection(
     selectedSort: com.example.ui.SortOption,
     onSortChange: (com.example.ui.SortOption) -> Unit
 ) {
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val segmentedBg = if (darkTheme) Color(0xFF131C30) else Color(0xFFE2E8F0)
+    val activeTabBg = if (darkTheme) Color(0xFF1E293B) else Color(0xFFFFFFFF)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // Search text field
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onQueryChange,
-            placeholder = { Text("Search tasks...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { onQueryChange("") }) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear search")
-                    }
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("search_field")
-        )
+         // Search text field with sleek rounded corners and magnifying glass icon
+         OutlinedTextField(
+             value = searchQuery,
+             onValueChange = onQueryChange,
+             placeholder = { 
+                 Text(
+                     text = "Search tasks...", 
+                     style = MaterialTheme.typography.bodyMedium,
+                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                 ) 
+             },
+             leadingIcon = { 
+                 Icon(
+                     imageVector = Icons.Default.Search, 
+                     contentDescription = "Search Icon",
+                     tint = MaterialTheme.colorScheme.primary,
+                     modifier = Modifier.size(20.dp)
+                 ) 
+             },
+             trailingIcon = {
+                 if (searchQuery.isNotEmpty()) {
+                     IconButton(onClick = { onQueryChange("") }) {
+                         Icon(
+                             imageVector = Icons.Default.Close, 
+                             contentDescription = "Clear search",
+                             tint = MaterialTheme.colorScheme.onSurfaceVariant
+                         )
+                     }
+                 }
+             },
+             singleLine = true,
+             shape = RoundedCornerShape(16.dp),
+             colors = OutlinedTextFieldDefaults.colors(
+                 focusedContainerColor = MaterialTheme.colorScheme.surface,
+                 unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                 focusedBorderColor = MaterialTheme.colorScheme.primary,
+                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                 focusedLabelColor = MaterialTheme.colorScheme.primary
+             ),
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .testTag("search_field")
+         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+         Spacer(modifier = Modifier.height(14.dp))
 
-        // Status Tabs (All, Pending, Completed)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            val statuses = listOf("All", "Pending", "Completed")
-            statuses.forEach { status ->
-                val isSelected = selectedStatus == status
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
-                        .clickable { onStatusChange(status) }
-                        .padding(vertical = 8.dp)
-                        .testTag("status_filter_$status"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = status,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
+         // Premium Segmented Status Tabs (All, Pending, Completed)
+         Row(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .clip(RoundedCornerShape(14.dp))
+                 .background(segmentedBg)
+                 .padding(3.dp),
+             horizontalArrangement = Arrangement.SpaceBetween,
+             verticalAlignment = Alignment.CenterVertically
+         ) {
+             val statuses = listOf("All", "Pending", "Completed")
+             statuses.forEach { status ->
+                 val isSelected = selectedStatus == status
+                 Box(
+                     modifier = Modifier
+                         .weight(1f)
+                         .clip(RoundedCornerShape(11.dp))
+                         .background(if (isSelected) activeTabBg else Color.Transparent)
+                         .clickable { onStatusChange(status) }
+                         .padding(vertical = 10.dp)
+                         .testTag("status_filter_$status"),
+                     contentAlignment = Alignment.Center
+                 ) {
+                     Text(
+                         text = status,
+                         style = MaterialTheme.typography.bodyMedium,
+                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                         color = if (isSelected) {
+                             MaterialTheme.colorScheme.primary
+                         } else {
+                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                         }
+                     )
+                 }
+             }
+         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+         Spacer(modifier = Modifier.height(12.dp))
 
-        // Category scroll chips row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val allCategories = listOf("All") + categories
-            allCategories.forEach { category ->
-                val isSelected = selectedCategory == category
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onCategoryChange(category) },
-                    label = { Text(category) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    border = null,
-                    modifier = Modifier.testTag("category_filter_$category")
-                )
-            }
-        }
+         // Category scroll chips row
+         Row(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .horizontalScroll(rememberScrollState()),
+             horizontalArrangement = Arrangement.spacedBy(8.dp),
+             verticalAlignment = Alignment.CenterVertically
+         ) {
+             val allCategories = listOf("All") + categories
+             allCategories.forEach { category ->
+                 val isSelected = selectedCategory == category
+                 FilterChip(
+                     selected = isSelected,
+                     onClick = { onCategoryChange(category) },
+                     label = { Text(category) },
+                     colors = FilterChipDefaults.filterChipColors(
+                         selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                         selectedLabelColor = MaterialTheme.colorScheme.primary,
+                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                         labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                     ),
+                     shape = RoundedCornerShape(12.dp),
+                     border = FilterChipDefaults.filterChipBorder(
+                         enabled = true,
+                         selected = isSelected,
+                         borderColor = Color.Transparent,
+                         selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                         borderWidth = 1.dp
+                     ),
+                     modifier = Modifier.testTag("category_filter_$category")
+                 )
+             }
+         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+         Spacer(modifier = Modifier.height(8.dp))
 
-        // Priority filter row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Priority:",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 4.dp)
-            )
-            val allPriorities = listOf("All") + priorities
-            allPriorities.forEach { priority ->
-                val isSelected = selectedPriority == priority
-                val badgeColor = when (priority) {
-                    "High" -> HighPriorityColor
-                    "Medium" -> MediumPriorityColor
-                    "Low" -> LowPriorityColor
-                    else -> MaterialTheme.colorScheme.primary
-                }
+         // Priority filter row
+         Row(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .horizontalScroll(rememberScrollState()),
+             horizontalArrangement = Arrangement.spacedBy(8.dp),
+             verticalAlignment = Alignment.CenterVertically
+         ) {
+             Text(
+                 text = "Priority:",
+                 style = MaterialTheme.typography.bodySmall,
+                 fontWeight = FontWeight.Bold,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                 modifier = Modifier.padding(end = 4.dp)
+             )
+             val allPriorities = listOf("All") + priorities
+             allPriorities.forEach { priority ->
+                 val isSelected = selectedPriority == priority
+                 val badgeColor = when (priority) {
+                     "High" -> HighPriorityColor
+                     "Medium" -> MediumPriorityColor
+                     "Low" -> LowPriorityColor
+                     else -> MaterialTheme.colorScheme.primary
+                 }
 
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onPriorityChange(priority) },
-                    label = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (priority != "All") {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(badgeColor, CircleShape)
-                                        .padding(end = 4.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                            }
-                            Text(priority)
-                        }
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = badgeColor.copy(alpha = 0.15f),
-                        selectedLabelColor = badgeColor,
-                        containerColor = Color.Transparent,
-                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = isSelected,
-                        borderColor = if (isSelected) badgeColor else MaterialTheme.colorScheme.surfaceVariant,
-                        selectedBorderColor = badgeColor
-                    ),
-                    modifier = Modifier.testTag("priority_filter_$priority")
-                )
-            }
-        }
+                 FilterChip(
+                     selected = isSelected,
+                     onClick = { onPriorityChange(priority) },
+                     label = {
+                         Row(verticalAlignment = Alignment.CenterVertically) {
+                             if (priority != "All") {
+                                 Box(
+                                     modifier = Modifier
+                                         .size(8.dp)
+                                         .background(badgeColor, CircleShape)
+                                 )
+                                 Spacer(modifier = Modifier.width(6.dp))
+                             }
+                             Text(priority)
+                         }
+                     },
+                     colors = FilterChipDefaults.filterChipColors(
+                         selectedContainerColor = badgeColor.copy(alpha = 0.12f),
+                         selectedLabelColor = badgeColor,
+                         containerColor = Color.Transparent,
+                         labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                     ),
+                     shape = RoundedCornerShape(12.dp),
+                     border = FilterChipDefaults.filterChipBorder(
+                         enabled = true,
+                         selected = isSelected,
+                         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                         selectedBorderColor = badgeColor,
+                         borderWidth = 1.dp
+                     ),
+                     modifier = Modifier.testTag("priority_filter_$priority")
+                 )
+             }
+         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+         Spacer(modifier = Modifier.height(8.dp))
 
-        // Sort filter row (NEW)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Sort By:",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 4.dp)
-            )
-            com.example.ui.SortOption.values().forEach { option ->
-                val isSelected = selectedSort == option
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onSortChange(option) },
-                    label = { Text(option.displayName) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        selectedLabelColor = MaterialTheme.colorScheme.primary,
-                        containerColor = Color.Transparent,
-                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = isSelected,
-                        borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        selectedBorderColor = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.testTag("sort_filter_${option.name}")
-                )
-            }
-        }
+         // Sort filter row
+         Row(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .horizontalScroll(rememberScrollState()),
+             horizontalArrangement = Arrangement.spacedBy(8.dp),
+             verticalAlignment = Alignment.CenterVertically
+         ) {
+             Text(
+                 text = "Sort By:",
+                 style = MaterialTheme.typography.bodySmall,
+                 fontWeight = FontWeight.Bold,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                 modifier = Modifier.padding(end = 4.dp)
+             )
+             com.example.ui.SortOption.values().forEach { option ->
+                 val isSelected = selectedSort == option
+                 FilterChip(
+                     selected = isSelected,
+                     onClick = { onSortChange(option) },
+                     label = { Text(option.displayName) },
+                     colors = FilterChipDefaults.filterChipColors(
+                         selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                         selectedLabelColor = MaterialTheme.colorScheme.primary,
+                         containerColor = Color.Transparent,
+                         labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                     ),
+                     shape = RoundedCornerShape(12.dp),
+                     border = FilterChipDefaults.filterChipBorder(
+                         enabled = true,
+                         selected = isSelected,
+                         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                         selectedBorderColor = MaterialTheme.colorScheme.primary,
+                         borderWidth = 1.dp
+                     ),
+                     modifier = Modifier.testTag("sort_filter_${option.name}")
+                 )
+             }
+         }
     }
 }
 
@@ -944,26 +1095,29 @@ fun TaskItemCard(
         else -> LowPriorityColor
     }
 
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val completedBg = if (darkTheme) Color(0xFF0C1917) else Color(0xFFEAF5F2)
+    val cardBackground = if (task.isCompleted) completedBg else MaterialTheme.colorScheme.surface
+    val cardBorderColor = if (task.isCompleted) {
+        if (darkTheme) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFA7F3D0)
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("task_card_${task.id}"),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (task.isCompleted)
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            else
-                MaterialTheme.colorScheme.surface
+            containerColor = cardBackground
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (task.isCompleted) 0.dp else 2.dp
+            defaultElevation = if (task.isCompleted) 0.dp else 1.dp
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = if (task.isCompleted)
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            else
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            color = cardBorderColor
         )
     ) {
         Column(
@@ -974,35 +1128,38 @@ fun TaskItemCard(
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Priority Color Notch Indicator Key on the very left
+                // Priority color notch formatted as a smooth curved vertical gradient bar
                 Box(
                     modifier = Modifier
                         .width(6.dp)
-                        .height(if (isExpanded) 120.dp else 96.dp)
-                        .background(barrierColor)
+                        .height(if (isExpanded) 110.dp else 74.dp)
                         .align(Alignment.CenterVertically)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(barrierColor, barrierColor.copy(alpha = 0.4f))
+                            ),
+                            shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
+                        )
                 )
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
+                        .padding(horizontal = 14.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Geometric Check State icon on the left (square with rounded borders)
+                    // Modern Animated Circular Check Checkbox
                     Box(
                         modifier = Modifier
-                            .size(26.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .size(24.dp)
+                            .clip(CircleShape)
                             .background(
-                                if (task.isCompleted) MaterialTheme.colorScheme.primary else Color.Transparent
+                                if (task.isCompleted) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f) else Color.Transparent
                             )
                             .border(
                                 width = 2.dp,
-                                color = if (task.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
-                                    alpha = 0.6f
-                                ),
-                                shape = RoundedCornerShape(8.dp)
+                                color = if (task.isCompleted) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                shape = CircleShape
                             )
                             .clickable { onToggleComplete() }
                             .testTag("task_checkbox_${task.id}"),
@@ -1012,15 +1169,15 @@ fun TaskItemCard(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Task Completed Checkmark",
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.width(14.dp))
 
-                    // Task details (title, description, dynamic tag alerts)
+                    // Task Core Text (Title, description, badges)
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
@@ -1029,7 +1186,7 @@ fun TaskItemCard(
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
                             color = if (task.isCompleted)
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             else
                                 MaterialTheme.colorScheme.onBackground,
                             textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
@@ -1042,7 +1199,7 @@ fun TaskItemCard(
                             Text(
                                 text = task.description,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                 maxLines = if (isExpanded) 10 else 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -1050,18 +1207,18 @@ fun TaskItemCard(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Tags row: Category, priority badge and optional due date
+                        // High fidelity tags pills: Category, Priority and Alarms
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.horizontalScroll(rememberScrollState())
                         ) {
-                            // Category Chip
+                            // Category Badge
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
                                 Text(
                                     text = task.category,
@@ -1071,35 +1228,37 @@ fun TaskItemCard(
                                 )
                             }
 
-                            // Priority Badge Chip
+                            // Priority Badge
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(barrierColor.copy(alpha = 0.15f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(barrierColor.copy(alpha = 0.1f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
                                 Text(
-                                    text = task.priority + " Priority",
+                                    text = task.priority,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = barrierColor,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
 
-                            // Optional Due date indicator
+                            // Due date alerts
                             if (task.dueDate != null) {
                                 val formattedDueDate = remember(task.dueDate) {
                                     val sdf = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
                                     sdf.format(Date(task.dueDate))
                                 }
                                 val isOverdue = !task.isCompleted && task.dueDate < System.currentTimeMillis()
-                                val dueColor = if (isOverdue) HighPriorityColor else MaterialTheme.colorScheme.onSurfaceVariant
+                                val dueColor = if (isOverdue) HighPriorityColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                val badgeBg = if (isOverdue) HighPriorityColor.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(if (isOverdue) HighPriorityColor.copy(alpha = 0.08f) else Color.Transparent)
-                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(badgeBg)
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isOverdue) Icons.Default.Warning else Icons.Default.Notifications,
@@ -1110,13 +1269,13 @@ fun TaskItemCard(
                                     Spacer(modifier = Modifier.width(4.dp))
                                     val reminderSuffix = if (task.reminderMinutesBefore > 0) {
                                         val m = task.reminderMinutesBefore
-                                        if (m >= 60) " (Remind ${m / 60}h early)" else " (Remind ${m}m early)"
+                                        if (m >= 60) " (${m / 60}h early)" else " (${m}m early)"
                                     } else ""
                                     Text(
                                         text = formattedDueDate + reminderSuffix + if (isOverdue) " (Overdue)" else "",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = dueColor,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
@@ -1125,7 +1284,7 @@ fun TaskItemCard(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // CRUD Actions on the right (Edit and Delete)
+                    // Action tools (Edit, Delete)
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1138,8 +1297,8 @@ fun TaskItemCard(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit Task",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
@@ -1153,24 +1312,25 @@ fun TaskItemCard(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete Task",
                                 tint = HighPriorityColor.copy(alpha = 0.8f),
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
             }
 
-            // Inline Subtasks Progress & Expandable Area
+            // Inline subtask listings, with full-width progress tracks
             if (hasSubtasks || isExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                        .padding(start = 20.dp, end = 20.dp, bottom = 18.dp)
                 ) {
-                    // Subtask Progress bar always visible if loaded
                     if (hasSubtasks) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -1183,7 +1343,7 @@ fun TaskItemCard(
                             Text(
                                 text = "${(subtaskRate * 100).toInt()}%",
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -1193,36 +1353,35 @@ fun TaskItemCard(
                             trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
+                                .height(5.dp)
                                 .clip(CircleShape)
-                                .padding(bottom = 4.dp)
+                                .padding(bottom = 2.dp)
                         )
                     }
 
-                    // Expanded checklist rendering
                     if (isExpanded) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // List subtasks
+                        Spacer(modifier = Modifier.height(10.dp))
+
                         subtasks.forEachIndexed { index, sub ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
-                                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                                    .padding(vertical = 3.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // Subtask Checkbox Circle
                                 Box(
                                     modifier = Modifier
-                                        .size(20.dp)
-                                        .clip(RoundedCornerShape(6.dp))
+                                        .size(18.dp)
+                                        .clip(CircleShape)
                                         .background(if (sub.isCompleted) MaterialTheme.colorScheme.primary else Color.Transparent)
                                         .border(
-                                            1.5.dp,
-                                            if (sub.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                            RoundedCornerShape(6.dp)
+                                            width = 1.5.dp,
+                                            color = if (sub.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                            shape = CircleShape
                                         )
                                         .clickable { viewModel.toggleSubtaskCompletion(context, task, index) },
                                     contentAlignment = Alignment.Center
@@ -1232,7 +1391,7 @@ fun TaskItemCard(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = null,
                                             tint = Color.White,
-                                            modifier = Modifier.size(12.dp)
+                                            modifier = Modifier.size(10.dp)
                                         )
                                     }
                                 }
@@ -1244,27 +1403,27 @@ fun TaskItemCard(
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
                                     textDecoration = if (sub.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                                    color = if (sub.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
+                                    color = if (sub.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f)
                                 )
 
                                 IconButton(
                                     onClick = { viewModel.removeSubtask(context, task, index) },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Delete subtask",
-                                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(16.dp)
+                                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(14.dp)
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                        // Inline Adder Text view field
+                        // Stylish subtask input line
                         var newSubtaskText by remember { mutableStateOf("") }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -1273,14 +1432,22 @@ fun TaskItemCard(
                             OutlinedTextField(
                                 value = newSubtaskText,
                                 onValueChange = { newSubtaskText = it },
-                                placeholder = { Text("Add checklist point...") },
+                                placeholder = { 
+                                    Text(
+                                        text = "Add checklist item...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    ) 
+                                },
                                 singleLine = true,
                                 textStyle = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f).height(48.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent
                                 )
@@ -1317,57 +1484,77 @@ fun EmptyTasksState(isSearchingOrFiltering: Boolean, onAddTaskClick: () -> Unit)
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .testTag("empty_state_container"),
+            .testTag("empty_state_container")
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Geometric Balance themed custom illustration anchor
+        // High fidelity custom illustrated icon card using concentric circles & gradient glows
         Box(
             modifier = Modifier
-                .size(120.dp)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(32.dp)),
+                .size(130.dp)
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.02f)
+                        )
+                    ),
+                    shape = CircleShape
+                )
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    shape = CircleShape
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = if (isSearchingOrFiltering) Icons.Default.Search else Icons.Default.CheckCircle,
-                contentDescription = "No Tasks Logo Icon",
-                modifier = Modifier.size(62.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = CircleShape
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isSearchingOrFiltering) Icons.Default.Search else Icons.Default.CheckCircle,
+                    contentDescription = "No Tasks Logo Icon",
+                    modifier = Modifier.size(42.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Text(
-            text = if (isSearchingOrFiltering) "No matching tasks found" else "All tasks caught up!",
+            text = if (isSearchingOrFiltering) "No matching tasks" else "All caught up!",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground,
+            letterSpacing = (-0.5).sp
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = if (isSearchingOrFiltering)
-                "Try adjusting your keyword filter or switching category rules."
+                "Try adjusting your filters or editing your search keyword to find what you need."
             else
-                "You have no tasks remaining. Tap below to create one!",
+                "Your slate is completely clean. Tap the + icon to create your next focus point!",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 32.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+            modifier = Modifier.padding(horizontal = 24.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            fontWeight = FontWeight.Medium
         )
-
-        if (!isSearchingOrFiltering) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onAddTaskClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Create a Task", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        }
     }
 }
 
@@ -1804,8 +1991,19 @@ fun AddEditTaskDialog(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        datePickerState.selectedDateMillis?.let {
-                            dueDateInMs = it
+                        datePickerState.selectedDateMillis?.let { dateMillis ->
+                            val calendar = java.util.Calendar.getInstance().apply { timeInMillis = dueDateInMs }
+                            val h = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+                            val m = calendar.get(java.util.Calendar.MINUTE)
+                            
+                            val newCalendar = java.util.Calendar.getInstance().apply {
+                                timeInMillis = dateMillis
+                                set(java.util.Calendar.HOUR_OF_DAY, h)
+                                set(java.util.Calendar.MINUTE, m)
+                                set(java.util.Calendar.SECOND, 0)
+                                set(java.util.Calendar.MILLISECOND, 0)
+                            }
+                            dueDateInMs = newCalendar.timeInMillis
                         }
                         showDatePicker = false
                     }

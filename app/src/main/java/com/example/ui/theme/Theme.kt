@@ -1,5 +1,6 @@
 package com.example.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -8,43 +9,43 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowCompat
-import android.app.Activity
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PurpleM3,
-    secondary = PurpleActiveChipM3,
-    tertiary = LowPriorityColor,
-    primaryContainer = PurpleM3.copy(alpha = 0.25f),
+    primary = BrandPrimaryLight,
+    secondary = BrandSecondary,
+    tertiary = BrandAccent,
+    primaryContainer = BrandPrimaryLight.copy(alpha = 0.15f),
     onPrimaryContainer = TextPrimaryDark,
     background = DarkBg,
     surface = DarkSurface,
     surfaceVariant = DarkSurfaceVariant,
-    outline = BorderValueM3.copy(alpha = 0.4f),
-    onPrimary = LightSurface,
-    onSecondary = LightSurface,
-    onTertiary = LightSurface,
+    outline = DarkSurfaceVariant,
+    onPrimary = Color.Black,
+    onSecondary = TextPrimaryDark,
+    onTertiary = TextPrimaryDark,
     onBackground = TextPrimaryDark,
     onSurface = TextPrimaryDark,
     onSurfaceVariant = TextSecondaryDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PurpleM3,
-    secondary = PurpleActiveChipM3,
-    tertiary = PurpleDarkM3,
-    primaryContainer = PurpleLightContainerM3,
-    onPrimaryContainer = PurpleDarkM3,
+    primary = BrandPrimary,
+    secondary = BrandSecondary,
+    tertiary = BrandAccent,
+    primaryContainer = BrandPrimary.copy(alpha = 0.1f),
+    onPrimaryContainer = TextPrimaryLight,
     background = LightBg,
     surface = LightSurface,
     surfaceVariant = LightSurfaceVariant,
     outline = BorderValueM3,
-    onPrimary = LightSurface,
-    onSecondary = PurpleDarkM3,
-    onTertiary = LightSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
     onBackground = TextPrimaryLight,
     onSurface = TextPrimaryLight,
     onSurfaceVariant = TextSecondaryLight
